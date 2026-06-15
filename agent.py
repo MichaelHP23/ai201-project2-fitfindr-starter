@@ -20,12 +20,13 @@ import json
 import os
 import re
 
-from dotenv import load_dotenv
+from dotenv import load_dotenv, dotenv_values
 from groq import Groq
 
 from tools import search_listings, suggest_outfit, create_fit_card, compare_price
 
-load_dotenv()
+_ENV_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+load_dotenv(_ENV_PATH)
 
 # ── session state ─────────────────────────────────────────────────────────────
 
@@ -56,7 +57,7 @@ def _parse_query(query: str) -> dict:
     Returns:
         dict with keys: description (str), size (str|None), max_price (float|None)
     """
-    api_key = os.environ.get("GROQ_API_KEY")
+    api_key = os.environ.get("GROQ_API_KEY") or dotenv_values(_ENV_PATH).get("GROQ_API_KEY")
     if not api_key:
         return {"description": query, "size": None, "max_price": None}
 
@@ -98,7 +99,7 @@ def _parse_query(query: str) -> dict:
             max_price = float(price_match.group(1))
 
         size_match = re.search(
-            r"\b(XXS|XS|S/M|M/L|XS|S|M|L|XL|XXL|[0-9]{1,2}W?)\b", query, re.IGNORECASE
+            r"\b(XXS|XS|S/M|M/L|S|M|L|XL|XXL|[0-9]{1,2}W?)\b", query, re.IGNORECASE
         )
         if size_match:
             size = size_match.group(1).upper()

@@ -13,18 +13,18 @@ Tools:
 
 import os
 import statistics
-from dotenv import load_dotenv
+from dotenv import load_dotenv, dotenv_values
 from groq import Groq
 from utils.data_loader import load_listings
 
-from pathlib import Path
-load_dotenv()
+_ENV_PATH = os.path.join(os.path.dirname(os.path.abspath(__file__)), ".env")
+load_dotenv(_ENV_PATH)
 
 # ── Groq client ───────────────────────────────────────────────────────────────
 
 def _get_groq_client() -> Groq:
     """Initialize and return a Groq client using GROQ_API_KEY from .env."""
-    api_key = os.environ.get("GROQ_API_KEY")
+    api_key = os.environ.get("GROQ_API_KEY") or dotenv_values(_ENV_PATH).get("GROQ_API_KEY")
     if not api_key:
         raise ValueError(
             "GROQ_API_KEY not set. Add it to a .env file in the project root."
@@ -113,8 +113,6 @@ def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
         A non-empty string with outfit suggestions.
         If wardrobe is empty, returns general styling advice rather than crashing.
     """
-    client = _get_groq_client()
-
     item_summary = (
         f"Title: {new_item.get('title', 'Unknown')}\n"
         f"Category: {new_item.get('category', 'Unknown')}\n"
@@ -154,6 +152,7 @@ def suggest_outfit(new_item: dict, wardrobe: dict) -> str:
         )
 
     try:
+        client = _get_groq_client()
         response = client.chat.completions.create(
             model="llama-3.3-70b-versatile",
             messages=[{"role": "user", "content": prompt}],
